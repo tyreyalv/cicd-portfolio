@@ -15,7 +15,7 @@ COPY app/app.py .
 
 # 6. Set the default version as an environment variable
 # This can be overridden at runtime by the CI/CD pipeline
-ENV APP_VERSION=1.0
+ENV APP_VERSION=1.3
 
 # 7. Expose the port the app runs on
 EXPOSE 8080
