@@ -1,6 +1,3 @@
-# app/app.py
-# A simple Flask web application
-
 from flask import Flask
 import os
 

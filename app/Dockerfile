@@ -11,7 +11,7 @@ WORKDIR /app
 RUN pip install Flask==2.1.2
 
 # 5. Copy the application code into the container
-COPY app.py .
+COPY app/app.py .
 
 # 6. Set the default version as an environment variable
 # This can be overridden at runtime by the CI/CD pipeline
