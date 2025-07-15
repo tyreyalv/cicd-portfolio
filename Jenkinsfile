@@ -1,4 +1,8 @@
+// Return Repository Name
 String getRepoName() {
+    // This is a more robust way to get the repository name.
+    // It finds the last '/' in the URL and takes the part after it,
+    // then removes the '.git' extension.
     def userRemoteConfigs = scm.getUserRemoteConfigs()
     if (userRemoteConfigs && !userRemoteConfigs.isEmpty()) {
         def repoUrl = userRemoteConfigs[0].getUrl()
@@ -7,6 +11,7 @@ String getRepoName() {
             return repoPart.split("\\.")[0]
         }
     }
+    // If we can't figure out the name, fail the build with a clear error.
     error("Could not determine repository name from SCM configuration.")
     return null
 }
@@ -53,6 +58,7 @@ spec:
     
     environment {
         DISCORD_WEBHOOK = credentials('discord-webhook-url')
+        // Create a unique, versioned tag using the build number, e.g., v1.1, v1.2 etc.
         IMAGE_TAG = "v1.${env.BUILD_NUMBER}"
     }
     
@@ -78,6 +84,22 @@ spec:
                 }
             }
         }
+
+        // NEW STAGE TO PREVENT BUILD LOOPS
+        stage('Check Commit Message') {
+            steps {
+                script {
+                    def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                    if (commitMsg.startsWith('ci:')) {
+                        echo "CI-generated commit detected. Stopping pipeline to prevent build loop."
+                        // Mark the build as successful and stop execution
+                        currentBuild.result = 'SUCCESS' 
+                        return
+                    }
+                    echo "Developer commit detected. Proceeding with build."
+                }
+            }
+        }
         
         stage('Build and Push with Kaniko') {
             steps {
@@ -96,19 +118,29 @@ spec:
             steps {
                 container(name: 'git-tools') {
                     script {
+                        // Use a "Username with password" credential.
+                        // The ID 'GitHub-jenkins' should now point to a credential with your
+                        // GitHub username and a Personal Access Token as the password.
                         withCredentials([usernamePassword(credentialsId: 'GitHub-jenkins', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                             
+                            // Mark the repository directory as safe for Git to fix ownership errors
                             sh "git config --global --add safe.directory ${env.WORKSPACE}"
 
+                            // Configure git user identity
                             sh "git config --global user.email 'jenkins@tyreyalv.com'"
                             sh "git config --global user.name 'Jenkins CI'"
                             
+                            // Install yq to safely edit the YAML file
                             sh "apk add --no-cache yq"
                             
+                            // Modify the Ansible variables file with the new image tag and app version
                             sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
                             sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
                             
+                            // Commit and push the change using the PAT.
+                            // Using single quotes prevents the Groovy interpolation warning.
                             sh 'git add ansible/group_vars/all.yml'
+                            // The commit message starts with 'ci:' which is what we check for.
                             sh 'git commit -m "ci: Update image tag to ${IMAGE_TAG}"'
                             sh 'git push https://${GIT_USER}:${GIT_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${GIT_BRANCH}'
                         }
@@ -121,6 +153,7 @@ spec:
     post {
         success {
             script {
+                // Correctly report the unique tag that was just built and pushed
                 discordSend description: "✅ **Successfully built and pushed image**\nRepository: `${env.repoName}`\nBranch: `${env.GIT_BRANCH}`\nTag: `${IMAGE_TAG}`\nDestination: `https://registry.tyreyalv.com/jenkins/${env.repoName}:${IMAGE_TAG}`", 
                           footer: "Build #${env.BUILD_NUMBER} • Completed in ${currentBuild.durationString.replace(' and counting', '')}", 
                           link: env.BUILD_URL, 
