@@ -1,7 +1,15 @@
 // Return Repository Name
 String getRepoName() {
-    // Extracts the repository name from the SCM URL.
-    return scm.getUserRemoteConfigs()[0].getUrl().tokenize('/')[4].split("\\.")[0]
+    def userRemoteConfigs = scm.getUserRemoteConfigs()
+    if (userRemoteConfigs && !userRemoteConfigs.isEmpty()) {
+        def repoUrl = userRemoteConfigs[0].getUrl()
+        if (repoUrl) {
+            def repoPart = repoUrl.substring(repoUrl.lastIndexOf('/') + 1)
+            return repoPart.split("\\.")[0]
+        }
+    }
+    error("Could not determine repository name from SCM configuration.")
+    return null
 }
 
 pipeline {
