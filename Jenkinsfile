@@ -121,10 +121,11 @@ spec:
                             sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
                             sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
                             
-                            // Commit and push the change using the PAT
-                            sh "git add ansible/group_vars/all.yml"
-                            sh "git commit -m 'ci: Update image tag to ${IMAGE_TAG}'"
-                            sh "git push https://${GIT_USER}:${GIT_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${env.GIT_BRANCH}"
+                            // Commit and push the change using the PAT.
+                            // Using single quotes prevents the Groovy interpolation warning.
+                            sh 'git add ansible/group_vars/all.yml'
+                            sh 'git commit -m "ci: Update image tag to ${IMAGE_TAG}"'
+                            sh 'git push https://${GIT_USER}:${GIT_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${GIT_BRANCH}'
                         }
                     }
                 }
