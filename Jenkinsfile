@@ -85,18 +85,21 @@ spec:
             }
         }
 
-        // NEW STAGE TO PREVENT BUILD LOOPS
+        // STAGE TO PREVENT BUILD LOOPS
         stage('Check Commit Message') {
             steps {
-                script {
-                    def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
-                    if (commitMsg.startsWith('ci:')) {
-                        echo "CI-generated commit detected. Stopping pipeline to prevent build loop."
-                        // Mark the build as successful and stop execution
-                        currentBuild.result = 'SUCCESS' 
-                        return
+                // Explicitly run this stage in the 'git-tools' container
+                container('git-tools') {
+                    script {
+                        def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+                        if (commitMsg.startsWith('ci:')) {
+                            echo "CI-generated commit detected. Stopping pipeline to prevent build loop."
+                            // Mark the build as successful and stop execution
+                            currentBuild.result = 'SUCCESS' 
+                            return
+                        }
+                        echo "Developer commit detected. Proceeding with build."
                     }
-                    echo "Developer commit detected. Proceeding with build."
                 }
             }
         }
