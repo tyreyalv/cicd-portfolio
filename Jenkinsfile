@@ -1,7 +1,9 @@
 // Return Repository Name
 String getRepoName() {
-    return scm.getUserRemoteConfigs()[0].getUrl().tokenize('/')[3].split("\\.")[0]
+    // Extracts the repository name from the SCM URL.
+    return scm.getUserRemoteConfigs()[0].getUrl().tokenize('/')[4].split("\\.")[0]
 }
+
 pipeline {
     agent {
         kubernetes {
@@ -10,7 +12,7 @@ pipeline {
             yaml """
 kind: Pod
 metadata:
-  name: kaniko
+  name: kaniko-pod
 spec:
   containers:
   - name: kaniko
@@ -25,6 +27,10 @@ spec:
     volumeMounts:
       - name: jenkins-docker-cfg
         mountPath: /kaniko/.docker
+  - name: git-tools
+    image: alpine/git # A small image with git for the handoff step
+    command: ["sleep", "9999"] # Keep the container running
+    tty: true
   volumes:
   - name: jenkins-docker-cfg
     projected:
@@ -40,13 +46,15 @@ spec:
     
     environment {
         DISCORD_WEBHOOK = credentials('discord-webhook-url')
+        // Create a unique, versioned tag using the build number, e.g., v1.1, v1.2 etc.
+        IMAGE_TAG = "v1.${env.BUILD_NUMBER}"
     }
     
     stages {
         stage('Notify Build Started') {
             steps {
                 script {
-                    discordSend description: "🔄 **Building Docker image**\nBranch: ${env.GIT_BRANCH}\nBuild: #${env.BUILD_NUMBER}", 
+                    discordSend description: "🔄 **Building Docker image**\nBranch: `${env.GIT_BRANCH}`\nBuild: `#${env.BUILD_NUMBER}`", 
                               footer: "Started at ${new Date().format('yyyy-MM-dd HH:mm:ss')}", 
                               link: env.BUILD_URL, 
                               result: "UNSTABLE", // Yellow color for "in progress"
@@ -58,25 +66,49 @@ spec:
         
         stage('Checkout Repository') {
             steps {
-                // Checkout Repository
                 checkout scm
-                // Get Repository Name
                 script {
                     env.repoName = getRepoName()
                 }
             }
         }
         
-        //stage('Run Code Tests') {
-        //}
-        
-        stage('Build with Kaniko and push to Harbor') {
+        stage('Build and Push with Kaniko') {
             steps {
                 container(name: 'kaniko', shell: '/busybox/sh') {
                     withEnv(['PATH+EXTRA=/busybox']) {
                         sh '''#!/busybox/sh
-            /kaniko/executor -f /app/Dockerfile -c `pwd` --destination=$HARBOR/jenkins/$repoName:$GIT_BRANCH
-            '''
+                          # Use the unique IMAGE_TAG for the destination
+                          /kaniko/executor -f app/Dockerfile -c `pwd` --destination=$HARBOR/jenkins/$repoName:$IMAGE_TAG
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Update Ansible Config in Git (Handoff to Argo CD)') {
+            steps {
+                container(name: 'git-tools') {
+                    script {
+                        // Use the GitHub App credential you created in Jenkins
+                        withCredentials([gitHubApp(credentialsId: 'GitHub-jenkins')]) {
+                            
+                            // Configure git user identity
+                            sh "git config --global user.email 'jenkins@tyreyalv.com'"
+                            sh "git config --global user.name 'Jenkins CI'"
+                            
+                            // Install yq to safely edit the YAML file
+                            sh "apk add --no-cache yq"
+                            
+                            // Modify the Ansible variables file with the new image tag and app version
+                            sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
+                            sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
+                            
+                            // Commit and push the change using the temporary token from the GitHub App
+                            sh "git add ansible/group_vars/all.yml"
+                            sh "git commit -m 'ci: Update image tag to ${IMAGE_TAG}'"
+                            sh "git push https://x-access-token:${GITHUB_APP_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${env.GIT_BRANCH}"
+                        }
                     }
                 }
             }
@@ -86,7 +118,8 @@ spec:
     post {
         success {
             script {
-                discordSend description: "✅ **Successfully built and pushed image**\nRepository: ${env.repoName}\nBranch: ${env.GIT_BRANCH}\nTag: ${env.GIT_BRANCH}\nDestination: https://registry.tyreyalv.com/jenkins/${env.repoName}:${env.GIT_BRANCH}", 
+                // Correctly report the unique tag that was just built and pushed
+                discordSend description: "✅ **Successfully built and pushed image**\nRepository: `${env.repoName}`\nBranch: `${env.GIT_BRANCH}`\nTag: `${IMAGE_TAG}`\nDestination: `https://registry.tyreyalv.com/jenkins/${env.repoName}:${IMAGE_TAG}`", 
                           footer: "Build #${env.BUILD_NUMBER} • Completed in ${currentBuild.durationString.replace(' and counting', '')}", 
                           link: env.BUILD_URL, 
                           result: "SUCCESS", // Green color
@@ -97,7 +130,7 @@ spec:
         
         failure {
             script {
-                discordSend description: "❌ **Build failed**\nRepository: ${env.repoName}\nBranch: ${env.GIT_BRANCH}\n\nCheck the logs for details.", 
+                discordSend description: "❌ **Build failed**\nRepository: `${env.repoName}`\nBranch: `${env.GIT_BRANCH}`\n\nCheck the logs for details.", 
                           footer: "Build #${env.BUILD_NUMBER} • Failed after ${currentBuild.durationString.replace(' and counting', '')}", 
                           link: env.BUILD_URL, 
                           result: "FAILURE", // Red color
@@ -108,7 +141,7 @@ spec:
         
         aborted {
             script {
-                discordSend description: "⚠️ **Build aborted**\nRepository: ${env.repoName}\nBranch: ${env.GIT_BRANCH}", 
+                discordSend description: "⚠️ **Build aborted**\nRepository: `${env.repoName}`\nBranch: `${env.GIT_BRANCH}`", 
                           footer: "Build #${env.BUILD_NUMBER}", 
                           link: env.BUILD_URL, 
                           result: "ABORTED", // Grey color
