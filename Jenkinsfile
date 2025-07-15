@@ -107,6 +107,9 @@ spec:
                         // GitHub username and a Personal Access Token as the password.
                         withCredentials([usernamePassword(credentialsId: 'GitHub-jenkins', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                             
+                            // Mark the repository directory as safe for Git to fix ownership errors
+                            sh "git config --global --add safe.directory ${env.WORKSPACE}"
+
                             // Configure git user identity
                             sh "git config --global user.email 'jenkins@tyreyalv.com'"
                             sh "git config --global user.name 'Jenkins CI'"
