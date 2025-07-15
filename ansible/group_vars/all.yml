@@ -8,12 +8,12 @@ namespace: "hello-app"
 # e.g., your-registry.io/your-name/cicd-portfolio
 image_repository: "registry.tyreyalv.com/jenkins/cicd-portfolio"
 # The tag of the image to deploy. Jenkins will update this value.
-image_tag: "v1.30"
+image_tag: "v1.31"
 # The name of the Kubernetes secret in your cluster that holds the registry credentials.
 image_pull_secret_name: "harbor-registry"
 # The version to be passed to the application container as an environment variable.
 # Jenkins will also update this value.
-app_version: "v1.30"
+app_version: "v1.31"
 # --- Ingress Configuration ---
 # The hostname for the application.
 # Replace this with a real domain pointing to your cluster's ingress controller.
