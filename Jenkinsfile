@@ -131,9 +131,6 @@ spec:
             steps {
                 container(name: 'git-tools') {
                     script {
-                        // Use a "Username with password" credential.
-                        // The ID 'GitHub-jenkins' should now point to a credential with your
-                        // GitHub username and a Personal Access Token as the password.
                         withCredentials([usernamePassword(credentialsId: 'GitHub-jenkins', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                             
                             // Configure git user identity
