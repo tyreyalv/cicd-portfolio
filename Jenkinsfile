@@ -65,19 +65,6 @@ spec:
     }
     
     stages {
-        stage('Notify Build Started') {
-            steps {
-                script {
-                    discordSend description: "🔄 **Building Docker image**\nBranch: `${env.GIT_BRANCH}`\nBuild: `#${env.BUILD_NUMBER}`", 
-                              footer: "Started at ${new Date().format('yyyy-MM-dd HH:mm:ss')}", 
-                              link: env.BUILD_URL, 
-                              result: "UNSTABLE", // Yellow color for "in progress"
-                              title: "🚀 Build Started: ${env.JOB_NAME}", 
-                              webhookURL: DISCORD_WEBHOOK
-                }
-            }
-        }
-        
         stage('Checkout Repository') {
             steps {
                 checkout scm
@@ -104,6 +91,21 @@ spec:
                             echo "Developer commit detected. Proceeding with build."
                         }
                     }
+                }
+            }
+        }
+
+        // This stage now runs AFTER the check and only if the build is NOT skipped.
+        stage('Notify Build Started') {
+            when { expression { env.SKIP_BUILD == 'false' } }
+            steps {
+                script {
+                    discordSend description: "🔄 **Building Docker image**\nBranch: `${env.GIT_BRANCH}`\nBuild: `#${env.BUILD_NUMBER}`", 
+                              footer: "Started at ${new Date().format('yyyy-MM-dd HH:mm:ss')}", 
+                              link: env.BUILD_URL, 
+                              result: "UNSTABLE", // Yellow color for "in progress"
+                              title: "🚀 Build Started: ${env.JOB_NAME}", 
+                              webhookURL: DISCORD_WEBHOOK
                 }
             }
         }
