@@ -1,5 +1,8 @@
 // Return Repository Name
 String getRepoName() {
+    // This is a more robust way to get the repository name.
+    // It finds the last '/' in the URL and takes the part after it,
+    // then removes the '.git' extension.
     def userRemoteConfigs = scm.getUserRemoteConfigs()
     if (userRemoteConfigs && !userRemoteConfigs.isEmpty()) {
         def repoUrl = userRemoteConfigs[0].getUrl()
@@ -8,6 +11,7 @@ String getRepoName() {
             return repoPart.split("\\.")[0]
         }
     }
+    // If we can't figure out the name, fail the build with a clear error.
     error("Could not determine repository name from SCM configuration.")
     return null
 }
@@ -98,8 +102,10 @@ spec:
             steps {
                 container(name: 'git-tools') {
                     script {
-                        // Use the GitHub App credential you created in Jenkins
-                        withCredentials([GitHubApp(credentialsId: 'GitHub-jenkins')]) {
+                        // Use a "Username with password" credential.
+                        // The ID 'GitHub-jenkins' should now point to a credential with your
+                        // GitHub username and a Personal Access Token as the password.
+                        withCredentials([usernamePassword(credentialsId: 'GitHub-jenkins', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                             
                             // Configure git user identity
                             sh "git config --global user.email 'jenkins@tyreyalv.com'"
@@ -112,10 +118,10 @@ spec:
                             sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
                             sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
                             
-                            // Commit and push the change using the temporary token from the GitHub App
+                            // Commit and push the change using the PAT
                             sh "git add ansible/group_vars/all.yml"
                             sh "git commit -m 'ci: Update image tag to ${IMAGE_TAG}'"
-                            sh "git push https://x-access-token:${GITHUB_APP_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${env.GIT_BRANCH}"
+                            sh "git push https://${GIT_USER}:${GIT_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${env.GIT_BRANCH}"
                         }
                     }
                 }
