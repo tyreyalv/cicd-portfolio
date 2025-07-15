@@ -99,7 +99,7 @@ spec:
                 container(name: 'git-tools') {
                     script {
                         // Use the GitHub App credential you created in Jenkins
-                        withCredentials([gitHubApp(credentialsId: 'GitHub-jenkins')]) {
+                        withCredentials([GitHubApp(credentialsId: 'GitHub-jenkins')]) {
                             
                             // Configure git user identity
                             sh "git config --global user.email 'jenkins@tyreyalv.com'"
