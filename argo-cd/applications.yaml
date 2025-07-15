@@ -1,13 +1,17 @@
+# argo-cd/application.yaml
+# This manifest defines the Argo CD Application for the GitOps workflow.
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   # The name of the application in the Argo CD UI.
   name: hello-app-prod
   # This application resource must be created in the 'argocd' namespace.
-  namespace: argocd
+  namespace: argo
 spec:
   # The Argo CD project this application belongs to.
-  project: default
+  # MODIFIED: Point to our new, dedicated project.
+  project: hello-app-project
 
   # Source defines the location of the application's configuration.
   source:
