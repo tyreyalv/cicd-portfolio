@@ -91,6 +91,9 @@ spec:
                 // Explicitly run this stage in the 'git-tools' container
                 container('git-tools') {
                     script {
+                        // Mark the repository directory as safe for Git BEFORE running any git commands
+                        sh "git config --global --add safe.directory ${env.WORKSPACE}"
+
                         def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
                         if (commitMsg.startsWith('ci:')) {
                             echo "CI-generated commit detected. Stopping pipeline to prevent build loop."
@@ -126,9 +129,6 @@ spec:
                         // GitHub username and a Personal Access Token as the password.
                         withCredentials([usernamePassword(credentialsId: 'GitHub-jenkins', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                             
-                            // Mark the repository directory as safe for Git to fix ownership errors
-                            sh "git config --global --add safe.directory ${env.WORKSPACE}"
-
                             // Configure git user identity
                             sh "git config --global user.email 'jenkins@tyreyalv.com'"
                             sh "git config --global user.name 'Jenkins CI'"
