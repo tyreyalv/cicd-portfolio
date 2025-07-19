@@ -125,7 +125,7 @@ spec:
             }
         }
 
-        stage('Update Ansible Config in Git (Handoff to Argo CD)') {
+        stage('Update Helm Config in Git (Handoff to Argo CD)') {
             // This stage will also only run if SKIP_BUILD is 'false'
             when { expression { env.SKIP_BUILD == 'false' } }
             steps {
@@ -140,9 +140,9 @@ spec:
                             // Install yq to safely edit the YAML file
                             sh "apk add --no-cache yq"
                             
-                            // Modify the Ansible variables file with the new image tag and app version
-                            sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i helm/values.yaml"
-                            sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i helm/values.yaml"
+                            // Modify the Helm values file with the new image tag and app version
+                            sh "yq e '.image.tag = \"${IMAGE_TAG}\"' -i helm/values.yaml"
+                            sh "yq e '.appVersion = \"${IMAGE_TAG}\"' -i helm/values.yaml"
                             
                             // Commit and push the change using the PAT.
                             // Using single quotes prevents the Groovy interpolation warning.

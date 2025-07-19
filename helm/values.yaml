@@ -145,5 +145,3 @@ volumeMounts: []
 # --- Deployment Annotations ---
 deployment:
   annotations: {}
-image_tag: v1.35
-app_version: v1.35
