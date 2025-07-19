@@ -7,8 +7,8 @@ WORKDIR /app
 # We only have one dependency, Flask, so we can install it directly
 # For a larger project, you would copy a requirements.txt file here
 
-# 4. Install Flask
-RUN pip install Flask==2.1.2
+# 4. Install Flask (using a more recent version for compatibility)
+RUN pip install Flask==2.3.3
 
 # 5. Copy the application code into the container
 COPY app/app.py .
