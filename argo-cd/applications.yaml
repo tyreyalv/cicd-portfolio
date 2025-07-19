@@ -10,7 +10,6 @@ metadata:
   namespace: argo
 spec:
   # The Argo CD project this application belongs to.
-  # MODIFIED: Point to our new, dedicated project.
   project: hello-app-project
 
   # Source defines the location of the application's configuration.
@@ -19,19 +18,33 @@ spec:
     repoURL: 'https://github.com/tyreyalv/cicd-portfolio.git'
     # The branch to track for changes.
     targetRevision: main
-    # The path within the repo where the deployment configuration is located.
-    path: ansible
+    # The path within the repo where the Helm chart is located.
+    path: helm
 
-    # This section tells Argo CD to use its Ansible plugin to render the manifests.
-    plugin:
-      name: ansible
+    # Helm configuration
+    helm:
+      # Use the values.yaml file in the chart directory
+      valueFiles:
+        - values.yaml
+      # Optional: Override specific values (can also be done via valueFiles)
+      # values: |
+      #   image:
+      #     tag: "latest"
+      
+      # Optional: Release name override (defaults to app name)
+      releaseName: hello-app
+      
+      # Optional: Helm parameters (alternative to values)
+      # parameters:
+      #   - name: "image.tag"
+      #     value: "v1.32"
 
   # Destination defines where the application will be deployed.
   destination:
     # The target cluster URL. 'https://kubernetes.default.svc' means the same cluster where Argo CD is running.
     server: 'https://kubernetes.default.svc'
     # The namespace to deploy the application's resources into.
-    # This should match the 'namespace' variable in your ansible/group_vars/all.yml file.
+    # This should match the namespace in your helm/values.yaml or be set via Release.Namespace
     namespace: 'hello-app'
 
   # SyncPolicy defines how Argo CD synchronizes the application state.
@@ -41,6 +54,21 @@ spec:
       prune: true
       # Automatically sync the application when it is out of sync with Git.
       selfHeal: true
-    # This sync option will automatically create the destination namespace if it doesn't exist.
+    # Sync options for Helm deployments
     syncOptions:
+      # Automatically create the destination namespace if it doesn't exist.
       - CreateNamespace=true
+      # Apply out-of-sync resources during automated sync
+      - ApplyOutOfSyncOnly=true
+      # Respect ignore differences for certain fields
+      - RespectIgnoreDifferences=true
+      # Optional: Prune last to avoid dependency issues
+      - PruneLast=true
+    
+    # Optional: Retry configuration for failed syncs
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
