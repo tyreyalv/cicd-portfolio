@@ -5,7 +5,6 @@
 # --- Application Configuration ---
 # Number of replicas to deploy
 replicaCount: 2
-
 # Container image configuration
 image:
   # The full path to the application image in your private registry
@@ -14,21 +13,16 @@ image:
   tag: "v1.32"
   # Image pull policy
   pullPolicy: IfNotPresent
-
 # Image pull secrets for private registries
 imagePullSecrets:
   - name: harbor-registry
-
 # Override the chart name
 nameOverride: ""
 fullnameOverride: ""
-
 # Application version passed as environment variable
 appVersion: "v1.32"
-
 # Container port that the app listens on
 containerPort: 8080
-
 # Additional environment variables
 env: []
 # Example:
@@ -59,7 +53,6 @@ service:
   nodePort: ""
   # Session affinity
   sessionAffinity: None
-
 # --- Ingress Configuration ---
 ingress:
   # Enable ingress
@@ -68,35 +61,33 @@ ingress:
   className: ""
   # Additional annotations
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
-  
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  # cert-manager.io/cluster-issuer: letsencrypt-prod
+
   # Hosts configuration
   hosts:
     - host: hello-app.tyreyalv.com
       paths:
         - path: /
           pathType: Prefix
-  
   # TLS configuration
   tls: []
   #  - secretName: hello-app-tls
   #    hosts:
   #      - hello-app.tyreyalv.com
-
 # --- Resource Management ---
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
 
 # --- Health Checks ---
 livenessProbe:
@@ -106,7 +97,6 @@ livenessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
-
 readinessProbe:
   enabled: true
   path: /
@@ -114,7 +104,6 @@ readinessProbe:
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3
-
 # --- Autoscaling ---
 autoscaling:
   enabled: false
@@ -122,18 +111,17 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
-
 # --- Security Context ---
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
 
 # --- Service Account ---
 serviceAccount:
@@ -144,23 +132,18 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
-
 # --- Pod Configuration ---
 podAnnotations: {}
-
 podLabels: {}
-
 # --- Node Selection ---
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 # --- Storage ---
 volumes: []
 volumeMounts: []
-
 # --- Deployment Annotations ---
 deployment:
   annotations: {}
+image_tag: v1.1
+app_version: v1.1
