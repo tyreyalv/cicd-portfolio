@@ -60,28 +60,21 @@ ingress:
   # Ingress class name
   className: ""
   # Additional annotations
-  annotations: {}
-  # kubernetes.io/ingress.class: nginx
-  # kubernetes.io/tls-acme: "true"
-  # cert-manager.io/cluster-issuer: letsencrypt-prod
-
+  annotations:
+   cert-manager.io/cluster-issuer: letsencrypt-prod
   # Hosts configuration
   hosts:
-    - host: hello-app.tyreyalv.com
+    - host: demo.tyreyalv.com
       paths:
         - path: /
           pathType: Prefix
   # TLS configuration
-  tls: []
-  #  - secretName: hello-app-tls
-  #    hosts:
-  #      - hello-app.tyreyalv.com
+  tls:
+    - secretName: demo-app-tls
+      hosts:
+        - demo.tyreyalv.com
 # --- Resource Management ---
 resources: {}
-# We usually recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with little
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
 # limits:
 #   cpu: 100m
 #   memory: 128Mi
