@@ -4,10 +4,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  # The name of the application in the Argo CD UI.
-  name: demo-project
-  # This application resource must be created in the 'argocd' namespace.
-  namespace: devops
+  # Change the name to avoid conflict with the AppProject
+  name: cicd-portfolio-app
+  # This application resource must be created in the 'argo' namespace.
+  namespace: argo
 spec:
   # The Argo CD project this application belongs to.
   project: demo-project
@@ -26,18 +26,9 @@ spec:
       # Use the values.yaml file in the chart directory
       valueFiles:
         - values.yaml
-      # Optional: Override specific values (can also be done via valueFiles)
-      # values: |
-      #   image:
-      #     tag: "latest"
       
       # Optional: Release name override (defaults to app name)
-      releaseName: devops-demo
-      
-      # Optional: Helm parameters (alternative to values)
-      # parameters:
-      #   - name: "image.tag"
-      #     value: "v1.32"
+      releaseName: cicd-portfolio
 
   # Destination defines where the application will be deployed.
   destination:
