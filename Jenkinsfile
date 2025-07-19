@@ -106,7 +106,6 @@ spec:
             }
         }
 
-        // This stage now runs AFTER the check and only if the build is NOT skipped.
         stage('Notify Build Started') {
             steps {
                 script {
