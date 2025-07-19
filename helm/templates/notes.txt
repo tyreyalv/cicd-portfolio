@@ -35,8 +35,8 @@
 6. To uninstall this release:
    helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}
 
-{{ if .Values.ingress.enabled -}}
- Your application should be accessible at: {{ .Values.ingress.hostname }}
+{{- if .Values.ingress.enabled }}
+ Your application should be accessible at: {{ (index .Values.ingress.hosts 0).host }}
 {{- end }}
 
 Release: {{ .Release.Name }}
