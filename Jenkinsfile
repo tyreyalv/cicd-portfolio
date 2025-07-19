@@ -60,8 +60,6 @@ spec:
         DISCORD_WEBHOOK = credentials('discord-webhook-url')
         // Create a unique, versioned tag using the build number, e.g., v1.1, v1.2 etc.
         IMAGE_TAG = "v1.${env.BUILD_NUMBER}"
-        // Initialize the build skip flag
-        SKIP_BUILD = "false"
     }
     
     stages {
