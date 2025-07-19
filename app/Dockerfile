@@ -4,9 +4,17 @@ FROM python:3.12-alpine
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install Flask (using a more recent version for compatibility)
-# Alpine uses apk for package management, but pip still works for Python packages
-RUN pip install --no-cache-dir Flask==2.3.3
+# Install system dependencies for building Python packages
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    openssl-dev
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    Flask==2.3.3 \
+    kubernetes==28.1.0
 
 # Copy the application code into the container
 COPY app/app.py .
@@ -22,7 +30,6 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Set a default version that will be overridden by the CI/CD pipeline
-# The Helm chart sets APP_VERSION via deployment.yaml env vars
 ENV APP_VERSION=dev
 
 # Expose the port the app runs on
