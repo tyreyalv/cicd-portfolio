@@ -14,12 +14,11 @@ RUN apk add --no-cache \
 # Remove any system-installed urllib3 packages that might conflict
 RUN apk del py3-urllib3 2>/dev/null || true
 
-# Install Python dependencies with security patch
-# Pin urllib3 to ensure we get the secure version
+# Install Python dependencies with latest versions that support urllib3 2.x
 RUN pip install --no-cache-dir \
     Flask==2.3.3 \
-    kubernetes==28.1.0 \
-    urllib3==2.5.0
+    kubernetes>=33.0.0 \
+    urllib3>=2.5.0
 
 # Copy the application code into the container
 COPY app/app.py .
