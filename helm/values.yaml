@@ -10,7 +10,7 @@ image:
   # The full path to the application image in your private registry
   repository: registry.tyreyalv.com/jenkins/cicd-portfolio
   # The tag of the image to deploy. Jenkins will update this value.
-  tag: "v1.60"
+  tag: "v1.62"
   # Image pull policy
   pullPolicy: IfNotPresent
 # Image pull secrets for private registries
@@ -20,7 +20,7 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: ""
 # Application version passed as environment variable
-appVersion: "v1.60"
+appVersion: "v1.62"
 # Container port that the app listens on
 containerPort: 8080
 # Additional environment variables
