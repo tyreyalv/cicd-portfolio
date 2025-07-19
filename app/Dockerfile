@@ -11,10 +11,11 @@ RUN apk add --no-cache \
     libffi-dev \
     openssl-dev
 
-# Install Python dependencies
+# Install Python dependencies with security patch
 RUN pip install --no-cache-dir \
     Flask==2.3.3 \
-    kubernetes==28.1.0
+    kubernetes==28.1.0 \
+    urllib3>=2.5.0
 
 # Copy the application code into the container
 COPY app/app.py .
