@@ -5,12 +5,12 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   # The name of the application in the Argo CD UI.
-  name: hello-app-prod
+  name: demo-project
   # This application resource must be created in the 'argocd' namespace.
-  namespace: argo
+  namespace: devops
 spec:
   # The Argo CD project this application belongs to.
-  project: hello-app-project
+  project: demo-project
 
   # Source defines the location of the application's configuration.
   source:
@@ -32,7 +32,7 @@ spec:
       #     tag: "latest"
       
       # Optional: Release name override (defaults to app name)
-      releaseName: hello-app
+      releaseName: devops-demo
       
       # Optional: Helm parameters (alternative to values)
       # parameters:
@@ -45,7 +45,7 @@ spec:
     server: 'https://kubernetes.default.svc'
     # The namespace to deploy the application's resources into.
     # This should match the namespace in your helm/values.yaml or be set via Release.Namespace
-    namespace: 'hello-app'
+    namespace: 'devops'
 
   # SyncPolicy defines how Argo CD synchronizes the application state.
   syncPolicy:
