@@ -141,12 +141,12 @@ spec:
                             sh "apk add --no-cache yq"
                             
                             // Modify the Ansible variables file with the new image tag and app version
-                            sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
-                            sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i ansible/group_vars/all.yml"
+                            sh "yq e '.image_tag = \"${IMAGE_TAG}\"' -i helm/values.yaml"
+                            sh "yq e '.app_version = \"${IMAGE_TAG}\"' -i helm/values.yaml"
                             
                             // Commit and push the change using the PAT.
                             // Using single quotes prevents the Groovy interpolation warning.
-                            sh 'git add ansible/group_vars/all.yml'
+                            sh 'git add helm/values.yaml'
                             // The commit message starts with 'ci:' which is what we check for.
                             sh 'git commit -m "ci: Update image tag to ${IMAGE_TAG}"'
                             sh 'git push https://${GIT_USER}:${GIT_TOKEN}@github.com/tyreyalv/${repoName}.git HEAD:${GIT_BRANCH}'
