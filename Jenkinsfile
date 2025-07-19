@@ -176,6 +176,91 @@ spec:
                 }
             }
         }
+        // Add this stage after your "Update Helm Config in Git" stage in your Jenkinsfile
+
+        stage('Trigger Argo CD Sync') {
+            when { 
+                not { 
+                    environment name: 'SKIP_BUILD', value: 'true' 
+                } 
+            }
+            steps {
+                container(name: 'git-tools') {
+                    script {
+                        try {
+                            // Wait for git push to propagate
+                            echo "Waiting for git changes to propagate..."
+                            sleep(time: 15, unit: 'SECONDS')
+                            
+                            // Check if kubectl can access the argo namespace
+                            sh "kubectl get namespace argo"
+                            
+                            // Trigger Argo CD refresh and sync
+                            echo "Triggering Argo CD application refresh..."
+                            
+                            // Method 1: Add refresh annotation (forces repo refresh)
+                            sh '''
+                                kubectl annotate application cicd-portfolio-app -n argo \\
+                                    argocd.argoproj.io/refresh=normal \\
+                                    --overwrite=true
+                            '''
+                            
+                            // Wait a moment for refresh to take effect
+                            sleep(time: 5, unit: 'SECONDS')
+                            
+                            // Method 2: Trigger sync operation
+                            sh '''
+                                kubectl patch application cicd-portfolio-app -n argo \\
+                                    --type='merge' \\
+                                    -p='{"operation":{"initiatedBy":{"username":"jenkins"},"sync":{"revision":"HEAD"}}}'
+                            '''
+                            
+                            // Wait for sync to complete (optional)
+                            echo "Waiting for Argo CD sync to complete..."
+                            timeout(time: 5, unit: 'MINUTES') {
+                                script {
+                                    def syncComplete = false
+                                    def attempts = 0
+                                    def maxAttempts = 30 // 5 minutes with 10-second intervals
+                                    
+                                    while (!syncComplete && attempts < maxAttempts) {
+                                        def syncStatus = sh(
+                                            script: '''kubectl get application cicd-portfolio-app -n argo -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown"''',
+                                            returnStdout: true
+                                        ).trim()
+                                        
+                                        def healthStatus = sh(
+                                            script: '''kubectl get application cicd-portfolio-app -n argo -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown"''',
+                                            returnStdout: true
+                                        ).trim()
+                                        
+                                        echo "Sync Status: ${syncStatus}, Health Status: ${healthStatus}"
+                                        
+                                        if (syncStatus == 'Synced' && healthStatus == 'Healthy') {
+                                            syncComplete = true
+                                            echo "Argo CD sync completed successfully!"
+                                        } else {
+                                            sleep(time: 10, unit: 'SECONDS')
+                                            attempts++
+                                        }
+                                    }
+                                    
+                                    if (!syncComplete) {
+                                        echo "Warning: Argo CD sync did not complete within timeout, but continuing..."
+                                    }
+                                }
+                            }
+                            
+                        } catch (Exception e) {
+                            // Don't fail the build if Argo CD sync fails
+                            echo "Warning: Failed to trigger Argo CD sync: ${e.getMessage()}"
+                            echo "The deployment will still be picked up by Argo CD's normal polling cycle."
+                        }
+                    }
+                }
+            }
+        }
+        
     }
     
     post {
