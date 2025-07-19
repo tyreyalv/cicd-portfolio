@@ -73,6 +73,10 @@ ingress:
     - secretName: demo-app-tls
       hosts:
         - demo.tyreyalv.com
+# --- RBAC Configuration ---
+rbac:
+  # Create RBAC resources for Kubernetes API access
+  create: true
 # --- Resource Management ---
 resources: {}
 # limits:
