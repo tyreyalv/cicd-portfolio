@@ -1,0 +1,149 @@
+# Default values for hello-app.
+# This is a YAML-formatted file.
+# Declare variables to be substituted into your templates.
+
+# --- Application Configuration ---
+# Number of replicas to deploy
+replicaCount: 2
+# Container image configuration
+image:
+  # The full path to the application image in your private registry
+  repository: registry.tyreyalv.com/jenkins/cicd-portfolio
+  # The tag of the image to deploy. Jenkins will update this value.
+  tag: "v1.32"
+  # Image pull policy
+  pullPolicy: IfNotPresent
+# Image pull secrets for private registries
+imagePullSecrets:
+  - name: harbor-registry
+# Override the chart name
+nameOverride: ""
+fullnameOverride: ""
+# Application version passed as environment variable
+appVersion: "v1.32"
+# Container port that the app listens on
+containerPort: 8080
+# Additional environment variables
+env: []
+# Example:
+# env:
+#   - name: DEBUG
+#     value: "false"
+
+# Environment variables from ConfigMaps or Secrets
+envFrom: []
+# Example:
+# envFrom:
+#   - configMapRef:
+#       name: app-config
+
+# --- Service Configuration ---
+service:
+  # Service type (ClusterIP, NodePort, LoadBalancer, ExternalName)
+  type: ClusterIP
+  # External port
+  port: 80
+  # Target port (container port)
+  targetPort: 8080
+  # Protocol
+  protocol: TCP
+  # Additional annotations for the service
+  annotations: {}
+  # Node port (only used with NodePort or LoadBalancer)
+  nodePort: ""
+  # Session affinity
+  sessionAffinity: None
+# --- Ingress Configuration ---
+ingress:
+  # Enable ingress
+  enabled: true
+  # Ingress class name
+  className: ""
+  # Additional annotations
+  annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  # cert-manager.io/cluster-issuer: letsencrypt-prod
+
+  # Hosts configuration
+  hosts:
+    - host: hello-app.tyreyalv.com
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS configuration
+  tls: []
+  #  - secretName: hello-app-tls
+  #    hosts:
+  #      - hello-app.tyreyalv.com
+# --- Resource Management ---
+resources: {}
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+# --- Health Checks ---
+livenessProbe:
+  enabled: true
+  path: /
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+readinessProbe:
+  enabled: true
+  path: /
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+# --- Autoscaling ---
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+# --- Security Context ---
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+# --- Service Account ---
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+# --- Pod Configuration ---
+podAnnotations: {}
+podLabels: {}
+# --- Node Selection ---
+nodeSelector: {}
+tolerations: []
+affinity: {}
+# --- Storage ---
+volumes: []
+volumeMounts: []
+# --- Deployment Annotations ---
+deployment:
+  annotations: {}
+image_tag: v1.2
+app_version: v1.2

@@ -20,7 +20,7 @@ This project implements a "push-then-pull" model, where CI and CD are two distin
 - Argo CD continuously monitors the Git repository
 - It detects the new commit made by Jenkins
 - It recognizes that the live application is out of sync with the desired state in Git
-- It automatically runs an Ansible playbook to apply the new configuration, updating the application in Kubernetes to the new version
+- It automatically deploys the Helm chart with the new configuration, updating the application in Kubernetes to the new version
 
 ## Workflow Diagram
 
@@ -40,7 +40,7 @@ This project implements a "push-then-pull" model, where CI and CD are two distin
 ---------------------------(Git is the Source of Truth)---------------------------
 
 +----------------+      +-------------+      +-----------------+      +-------------+
-|   GitHub Repo  |<-----|   Argo CD   |----->|  Ansible Playbook |----->| Kubernetes  |
+|   GitHub Repo  |<-----|   Argo CD   |----->|   Helm Chart    |----->| Kubernetes  |
 +----------------+      +-------------+      +-----------------+      +-------------+
       ^                      |                      |                      |
       | 5. Detects Change    | 6. Syncs State       | 7. Deploys App       |
@@ -52,7 +52,7 @@ This project implements a "push-then-pull" model, where CI and CD are two distin
 
 - **CI/CD Orchestration**: Jenkins
 - **GitOps Controller**: Argo CD
-- **Infrastructure as Code**: Ansible
+- **Package Management**: Helm Charts
 - **Containerization**: Docker, Kaniko
 - **Container Registry**: Harbor (or any other OCI-compliant registry)
 - **Platform**: Kubernetes
@@ -70,7 +70,7 @@ The Jenkins pipeline is responsible for the "build" half of the workflow.
 - **Tag & Push**: The new image is tagged with a unique version (e.g., `v1.123` based on the Jenkins build number) and pushed to the configured container registry
 - **Handoff**: The final stage uses a separate git-tools container to perform the handoff. It:
   - Checks out the repository again
-  - Uses `yq` (a YAML processor) to update the `image_tag` and `app_version` variables in `ansible/group_vars/all.yml`
+  - Uses `yq` (a YAML processor) to update the `image.tag` and `appVersion` variables in `helm/values.yaml`
   - Commits this change with the message `ci: Update image tag to ....`
   - Pushes the commit back to this repository
 
@@ -78,8 +78,9 @@ The Jenkins pipeline is responsible for the "build" half of the workflow.
 
 The Argo CD Application manifest defines the "deployment" half of the workflow.
 
-- **Source of Truth**: It is configured to watch the `/ansible` path of this repository
-- **Ansible Plugin**: It uses the built-in Argo CD Ansible plugin to interpret the source. When a sync is required, Argo CD will execute the `ansible/deploy.yml` playbook
+- **Source of Truth**: It is configured to watch the `/helm` path of this repository
+- **Helm Integration**: Argo CD uses its built-in Helm support to render and deploy the Kubernetes manifests from the Helm chart
+- **Values Management**: The `helm/values.yaml` file contains all configuration values, including the image tag that Jenkins updates
 - **Sync Policy**: The application is configured with a `selfHeal` and `prune` policy. This means Argo CD will automatically:
   - Apply any changes it detects in Git
   - Correct any manual changes (drift) made directly in the cluster to ensure the live state always matches the Git state
@@ -89,16 +90,33 @@ The Argo CD Application manifest defines the "deployment" half of the workflow.
 
 ```bash
 .
-├── ansible/          # Contains all Ansible configuration for deployment.
-│   ├── group_vars/   # Variables for the deployment (image tag, etc.).
-│   └── roles/        # Reusable Ansible roles.
-├── app/              # The Python Flask application source code.
+├── helm/                 # Helm chart for Kubernetes deployment
+│   ├── Chart.yaml        # Chart metadata and version info
+│   ├── values.yaml       # Configuration values (image tag updated by Jenkins)
+│   └── templates/        # Kubernetes manifest templates
+│       ├── deployment.yaml
+│       ├── service.yaml
+│       ├── ingress.yaml
+│       └── NOTES.txt
+├── app/                  # The Python Flask application source code
 │   ├── app.py
 │   └── Dockerfile
-├── argo-cd/          # Argo CD Application manifest.
+├── argo-cd/              # Argo CD Application manifest
 │   └── application.yaml
-└── Jenkinsfile       # The definition for the Jenkins CI pipeline.
+└── Jenkinsfile           # The definition for the Jenkins CI pipeline
 ```
+
+## Helm Chart Features
+
+The Helm chart provides a production-ready deployment with:
+
+- **Flexible Configuration**: All aspects configurable via `values.yaml`
+- **Health Checks**: Liveness and readiness probes for the Flask application
+- **Security**: Configurable security contexts and service accounts
+- **Scaling**: Support for horizontal pod autoscaling
+- **Ingress**: TLS-ready ingress configuration
+- **Resource Management**: CPU and memory limits/requests
+- **Observability**: Comprehensive labeling and annotations
 
 ## How to Trigger the Workflow
 
@@ -106,4 +124,31 @@ The Argo CD Application manifest defines the "deployment" half of the workflow.
 2. Commit the change with a standard commit message (e.g., `feat: Add new API endpoint`)
 3. Push the commit to the main branch
 
-This will start the Jenkins pipeline, which will build and push the new image, update the Ansible config, and trigger an automatic deployment via Argo CD.
+This will start the Jenkins pipeline, which will build and push the new image, update the Helm values, and trigger an automatic deployment via Argo CD.
+
+## Local Development
+
+To test the Helm chart locally:
+
+```bash
+# Validate the chart
+helm lint helm/
+
+# Render templates locally
+helm template hello-app helm/ --values helm/values.yaml
+
+# Install to a local cluster
+helm install hello-app helm/ --namespace hello-app --create-namespace
+
+# Upgrade with new values
+helm upgrade hello-app helm/ --set image.tag=v1.123
+```
+
+## Benefits of the Helm Approach
+
+- **Templating Power**: Advanced Go templating with conditionals and loops
+- **Package Management**: Charts can be versioned, shared, and distributed
+- **Ecosystem Integration**: Access to thousands of community Helm charts
+- **Built-in Validation**: Schema validation and chart testing capabilities
+- **Hooks**: Pre/post-install hooks for complex deployment scenarios
+- **Rollback Support**: Easy rollback to previous chart versions
