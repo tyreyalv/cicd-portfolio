@@ -74,7 +74,6 @@ spec:
             }
         }
 
-        // STAGE TO PREVENT BUILD LOOPS
         stage('Check Commit Message') {
             steps {
                 // Explicitly run this stage in the 'git-tools' container
@@ -83,12 +82,24 @@ spec:
                         // Mark the repository directory as safe for Git BEFORE running any git commands
                         sh "git config --global --add safe.directory ${env.WORKSPACE}"
 
-                        def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
-                        if (commitMsg.startsWith('ci:')) {
+                        // Get the commit message and clean it up
+                        def commitMsg = sh(script: 'git log -1 --pretty=format:"%s"', returnStdout: true).trim()
+                        echo "Raw commit message: '${commitMsg}'"
+                        
+                        // Also check the author to be extra sure
+                        def commitAuthor = sh(script: 'git log -1 --pretty=format:"%an"', returnStdout: true).trim()
+                        echo "Commit author: '${commitAuthor}'"
+                        
+                        // Check if this commit was made by Jenkins CI
+                        if (commitMsg.startsWith('ci:') || commitAuthor == 'Jenkins CI') {
                             echo "CI-generated commit detected. Setting SKIP_BUILD=true to prevent build loop."
+                            echo "Commit message: ${commitMsg}"
+                            echo "Commit author: ${commitAuthor}"
                             env.SKIP_BUILD = "true"
                         } else {
                             echo "Developer commit detected. Proceeding with build."
+                            echo "Commit message: ${commitMsg}"
+                            echo "Commit author: ${commitAuthor}"
                         }
                     }
                 }
