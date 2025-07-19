@@ -1,0 +1,58 @@
+# argo-cd/appproject.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: demo-project
+  namespace: argo
+  labels:
+    app.kubernetes.io/name: demo-project
+    app.kubernetes.io/part-of: argocd
+spec:
+  description: "Demo project for CI/CD portfolio"
+  
+  # Allow applications to be created in this project
+  sourceRepos:
+  - 'https://github.com/tyreyalv/cicd-portfolio.git'
+  - '*'  # Allow any repo (you can restrict this)
+  
+  # Allow deployments to specific clusters and namespaces
+  destinations:
+  - namespace: devops
+    server: https://kubernetes.default.svc
+  - namespace: '*'  # Allow any namespace (you can restrict this)
+    server: https://kubernetes.default.svc
+  
+  # Define what Kubernetes resources can be managed
+  clusterResourceWhitelist:
+  - group: ''
+    kind: '*'
+  - group: 'apps'
+    kind: '*'
+  - group: 'networking.k8s.io'
+    kind: '*'
+  - group: 'extensions'
+    kind: '*'
+  
+  # Define what namespaced resources can be managed
+  namespaceResourceWhitelist:
+  - group: ''
+    kind: '*'
+  - group: 'apps'
+    kind: '*'
+  - group: 'networking.k8s.io'
+    kind: '*'
+  - group: 'extensions'
+    kind: '*'
+  
+  # Project roles (optional)
+  roles:
+  - name: admin
+    description: "Admin access to demo project"
+    policies:
+    - p, proj:demo-project:admin, applications, *, demo-project/*, allow
+    - p, proj:demo-project:admin, repositories, *, *, allow
+    groups: []
+    
+  # Orphaned resources monitoring (optional)
+  orphanedResources:
+    warn: true
