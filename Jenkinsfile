@@ -108,29 +108,36 @@ spec:
 
         // This stage now runs AFTER the check and only if the build is NOT skipped.
         stage('Notify Build Started') {
-            when { expression { env.SKIP_BUILD == 'false' } }
             steps {
                 script {
-                    discordSend description: "🔄 **Building Docker image**\nBranch: `${env.GIT_BRANCH}`\nBuild: `#${env.BUILD_NUMBER}`", 
-                              footer: "Started at ${new Date().format('yyyy-MM-dd HH:mm:ss')}", 
-                              link: env.BUILD_URL, 
-                              result: "UNSTABLE", // Yellow color for "in progress"
-                              title: "🚀 Build Started: ${env.JOB_NAME}", 
-                              webhookURL: DISCORD_WEBHOOK
+                    if (env.SKIP_BUILD != 'true') {
+                        discordSend description: "🔄 **Building Docker image**\nBranch: `${env.GIT_BRANCH}`\nBuild: `#${env.BUILD_NUMBER}`", 
+                                  footer: "Started at ${new Date().format('yyyy-MM-dd HH:mm:ss')}", 
+                                  link: env.BUILD_URL, 
+                                  result: "UNSTABLE", // Yellow color for "in progress"
+                                  title: "🚀 Build Started: ${env.JOB_NAME}", 
+                                  webhookURL: DISCORD_WEBHOOK
+                    } else {
+                        echo "Skipping build notification - CI commit detected"
+                    }
                 }
             }
         }
         
         stage('Build and Push with Kaniko') {
-            // This stage will only run if SKIP_BUILD is 'false'
-            when { expression { env.SKIP_BUILD == 'false' } }
             steps {
-                container(name: 'kaniko', shell: '/busybox/sh') {
-                    withEnv(['PATH+EXTRA=/busybox']) {
-                        sh '''#!/busybox/sh
-                          # Use the unique IMAGE_TAG for the destination
-                          /kaniko/executor -f app/Dockerfile -c `pwd` --destination=$HARBOR/jenkins/$repoName:$IMAGE_TAG
-                        '''
+                script {
+                    if (env.SKIP_BUILD != 'true') {
+                        container(name: 'kaniko', shell: '/busybox/sh') {
+                            withEnv(['PATH+EXTRA=/busybox']) {
+                                sh '''#!/busybox/sh
+                                  # Use the unique IMAGE_TAG for the destination
+                                  /kaniko/executor -f app/Dockerfile -c `pwd` --destination=$HARBOR/jenkins/$repoName:$IMAGE_TAG
+                                '''
+                            }
+                        }
+                    } else {
+                        echo "Skipping build - CI commit detected"
                     }
                 }
             }
