@@ -59,7 +59,7 @@ def hello():
     </head>
     <body>
         <div class="container">
-            <h1>Welcome to the Demo App Team</h1>
+            <h1>Welcome to the Demo App Team and Company</h1>
             <p>This application is deployed via a CI/CD pipeline.</p>
             <div class="version-badge">Version: {APP_VERSION}</div>
         </div>
