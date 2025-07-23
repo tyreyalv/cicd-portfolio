@@ -357,7 +357,7 @@ def hello():
             <div class="header">
                 <div class="ship-icon" style="font-size: 2em;">🚀</div>
                 <h1 class="title">STARSHIP CI/CD</h1>
-                <p style="opacity: 0.8;">Command Center Online</p>
+                <p style="opacity: 0.8;">Command Center Online Team</p>
                 <div class="version-display">BUILD VERSION: {APP_VERSION}</div>
                 <p style="font-family: 'Courier New', monospace; color: #00ff88; margin: 10px 0;">
                     STATUS: {space_message}
